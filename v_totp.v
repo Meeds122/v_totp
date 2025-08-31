@@ -20,6 +20,44 @@ const default_algorithm := 'SHA1'
 const default_digits := 6
 const default_period := 30
 
+const reserved_chars = {
+	// RFC3986 Reserved
+	'!': '%21'
+	'#': '%23'
+	'$': '%24'
+	'&': '%26'
+	"'": '%27'
+	'(': '%28'
+	')': '%29'
+	'*': '%2A'
+	'+': '%2B'
+	',': '%2C'
+	'/': '%2F'
+	':': '%3A'
+	';': '%3B'
+	'=': '%3D'
+	'?': '%3F'
+	'@': '%40'
+	'[': '%5B'
+	']': '%5D'
+	// Character data commonly URI encoded
+	' ': '%20'
+	'"': '%22'
+	'%': '%25'
+	'-': '%2D'
+	'.': '%2E'
+	'<': '%3C'
+	'>': '%3E'
+	'\\': '%5C'
+	'^': '%5E'
+	'_': '%5F'
+	'`': '%60'
+	'{': '%7B'
+	'}': '%7D'
+	'|': '%7C'
+	'~': '%7E'
+}
+
 enum Type as u8 {
 	totp
 	hotp
@@ -74,55 +112,41 @@ pub fn parse_totp_uri (uri string) TOTP {
 }
 
 pub fn url_encode (text string) string {
-	reserved_chars := {
-		// RFC3986 Reserved
-		'!': '%21'
-		'#': '%23'
-		'$': '%24'
-		'&': '%26'
-		"'": '%27'
-		'(': '%28'
-		')': '%29'
-		'*': '%2A'
-		'+': '%2B'
-		',': '%2C'
-		'/': '%2F'
-		':': '%3A'
-		';': '%3B'
-		'=': '%3D'
-		'?': '%3F'
-		'@': '%40'
-		'[': '%5B'
-		']': '%5D'
-		// Character data commonly URI encoded
-		' ': '%20'
-		'"': '%22'
-		'%': '%25'
-		'-': '%2D'
-		'.': '%2E'
-		'<': '%3C'
-		'>': '%3E'
-		'\\': '%5C'
-		'^': '%5E'
-		'_': '%5F'
-		'`': '%60'
-		'{': '%7B'
-		'}': '%7D'
-		'|': '%7C'
-		'~': '%7E'
-		'£': '%C2%A3'
-		'€': '%E2%82%AC'
-	}
 
 	mut return_text := ''
 
 	for i in 0..text.len {
-		if text[i].ascii_str() in reserved_chars.keys() {
-			return_text += reserved_chars[text[i].ascii_str()]
+		if text[i].ascii_str() in v_totp.reserved_chars.keys() {
+			return_text += v_totp.reserved_chars[text[i].ascii_str()]
 		}
 		else {
 			return_text += text[i].ascii_str()
 		}
 	}
+	return return_text
+}
+
+pub fn url_decode (text string) string {
+
+	mut reversed_chars := map[string]string{}
+
+	for key in v_totp.reserved_chars.keys() {
+		reversed_chars[v_totp.reserved_chars[key]] = key
+	}
+
+	mut return_text := ''
+	mut i := 0
+	for i < text.len {
+		if text[i].ascii_str() == '%' {
+			val := '${text[i].ascii_str()}${text[i+1].ascii_str()}${text[i+2].ascii_str()}'
+			return_text += reversed_chars[val] or { val } // No key found
+			i += 3
+		}
+		else{
+			return_text += text[i].ascii_str()
+			i += 1
+		}
+	}
+
 	return return_text
 }
