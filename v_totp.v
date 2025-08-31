@@ -68,6 +68,11 @@ pub fn new_totp (issuer string, account_name string) !TOTP {
 	}
 }
 
+pub fn parse_totp_uri (uri string) TOTP {
+
+	return TOTP{}
+}
+
 pub fn url_encode (text string) string {
 	reserved_chars := {
 		// RFC3986 Reserved
