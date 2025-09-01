@@ -21,44 +21,6 @@ const default_algorithm := 'SHA1'
 const default_digits := 6
 const default_period := 30
 
-const reserved_chars = {
-	// RFC3986 Reserved
-	'!': '%21'
-	'#': '%23'
-	'$': '%24'
-	'&': '%26'
-	"'": '%27'
-	'(': '%28'
-	')': '%29'
-	'*': '%2A'
-	'+': '%2B'
-	',': '%2C'
-	'/': '%2F'
-	':': '%3A'
-	';': '%3B'
-	'=': '%3D'
-	'?': '%3F'
-	'@': '%40'
-	'[': '%5B'
-	']': '%5D'
-	// Character data commonly URI encoded
-	' ': '%20'
-	'"': '%22'
-	'%': '%25'
-	'-': '%2D'
-	'.': '%2E'
-	'<': '%3C'
-	'>': '%3E'
-	'\\': '%5C'
-	'^': '%5E'
-	'_': '%5F'
-	'`': '%60'
-	'{': '%7B'
-	'}': '%7D'
-	'|': '%7C'
-	'~': '%7E'
-}
-
 // The types are generic to both TOTP and HOTP as I was working off of specifications. 
 // This library only supports TOTP because why would I support a worse, less secure alternative?
 
@@ -147,6 +109,51 @@ pub fn parse_totp_uri (uri string) !TOTP {
 		period: atoi(form['period'] or { v_totp.default_period.str() }) or { return error('Error: Parsing, period not int') }
 		uri: uri
 	}
+}
+
+// https://www.rfc-editor.org/rfc/rfc6238
+// https://www.rfc-editor.org/rfc/rfc4226
+pub fn (t TOTP) valid_code (code int) bool {
+
+	return true
+}
+
+const reserved_chars = {
+	// RFC3986 Reserved
+	'!': '%21'
+	'#': '%23'
+	'$': '%24'
+	'&': '%26'
+	"'": '%27'
+	'(': '%28'
+	')': '%29'
+	'*': '%2A'
+	'+': '%2B'
+	',': '%2C'
+	'/': '%2F'
+	':': '%3A'
+	';': '%3B'
+	'=': '%3D'
+	'?': '%3F'
+	'@': '%40'
+	'[': '%5B'
+	']': '%5D'
+	// Character data commonly URI encoded
+	' ': '%20'
+	'"': '%22'
+	'%': '%25'
+	'-': '%2D'
+	'.': '%2E'
+	'<': '%3C'
+	'>': '%3E'
+	'\\': '%5C'
+	'^': '%5E'
+	'_': '%5F'
+	'`': '%60'
+	'{': '%7B'
+	'}': '%7D'
+	'|': '%7C'
+	'~': '%7E'
 }
 
 pub fn url_encode (text string) string {

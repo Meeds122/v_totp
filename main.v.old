@@ -6,5 +6,6 @@ fn main() {
 	t := v_totp.new_totp('test_iss', 'test_acc')!
 	println(t.uri)
 	u := v_totp.parse_totp_uri(t.uri)!
+	r := u.valid_code(123456)
 	$dbg
 }
