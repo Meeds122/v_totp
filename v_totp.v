@@ -5,6 +5,7 @@ import encoding.base32
 import encoding.binary
 import net.http { url_encode_form_data, parse_form } // https://modules.vlang.io/net.http.html#url_encode_form_data
 import strconv { atoi }
+import math { count_digits }
 
 import crypto.rand
 import crypto.hmac
@@ -135,8 +136,16 @@ pub fn truncate (h []u8, digits int) !u32 {
 		h[offset+2],
 		h[offset+3]
 	]
+	println('subset: 0x${subset[0]:x}${subset[1]:x}${subset[2]:x}${subset[3]:x}')
 	compressed_subset := binary.big_endian_u32(subset)
-	result := compressed_subset % (10^u32(digits))
+	println('compressed_subnet: 0x${compressed_subset:x}')
+	mut result := u32(0)
+	match digits {
+		6 { result = compressed_subset % 1_000_000 }
+		7 { result = compressed_subset % 10_000_000 }
+		8 { result = compressed_subset % 100_000_000 }
+		else { return error('Error: Truncate, digits not 6, 7, 8')}
+	}
 	return result
 }
 
