@@ -3,7 +3,7 @@ module v_totp
 import time
 import encoding.base32
 import encoding.binary
-import net.http { url_encode_form_data, parse_form } // https://modules.vlang.io/net.http.html#url_encode_form_data
+import net.http { url_encode_form_data, parse_form }
 import strconv { atoi }
 import math { count_digits }
 
@@ -36,7 +36,6 @@ struct Label {
 	account 		string
 }
 
-
 pub struct TOTP {
 	type 		Type		= Type.totp					// This is a TOTP module :P
 	label 		Label
@@ -50,7 +49,16 @@ pub:
 	uri			string
 }
 
-// Create the most basic TOTP using maximum defaults.
+// --------------------
+// -- v_totp methods --
+// --------------------
+
+pub fn (t TOTP) valid_code (code int) bool {
+
+	return true
+}
+
+// Create the most basic TOTP using defaults.
 pub fn new_totp (issuer string, account_name string) !TOTP {
 	l := Label{
 			issuer_prefix: issuer
@@ -113,15 +121,16 @@ pub fn parse_totp_uri (uri string) !TOTP {
 	}
 }
 
+// --------------------------
+// -- RFC Based Algorithms --
+// -------------------------- 
+
 // https://www.rfc-editor.org/rfc/rfc6238
 // https://www.rfc-editor.org/rfc/rfc4226
-pub fn (t TOTP) valid_code (code int) bool {
-
-	return true
-}
 
 // Supports all HMACs which create more than 20 bytes or 160 bits
 // Supports digits 6 - 8
+// Called the DT function in RFC4226 and RFC6238
 pub fn truncate (h []u8, digits int) !u32 {
 	if h.len < 20 {
 		return error('Error: Truncate, provided hash is less than 20 bytes.')
@@ -129,6 +138,7 @@ pub fn truncate (h []u8, digits int) !u32 {
 	if (digits < 6) || (digits > 8) {
 		return error('Error: Truncate, digits not 6, 7, 8')
 	}
+	// Based on the RFC4226 algorithm. 
 	offset := h[h.len-1] & 0xf
 	subset := [
 		h[offset] & 0x7f,
@@ -136,9 +146,8 @@ pub fn truncate (h []u8, digits int) !u32 {
 		h[offset+2],
 		h[offset+3]
 	]
-	println('subset: 0x${subset[0]:x}${subset[1]:x}${subset[2]:x}${subset[3]:x}')
 	compressed_subset := binary.big_endian_u32(subset)
-	println('compressed_subnet: 0x${compressed_subset:x}')
+	// math.powi returns an i64. This is faster and simpler because digits is constrained.
 	mut result := u32(0)
 	match digits {
 		6 { result = compressed_subset % 1_000_000 }
@@ -148,6 +157,10 @@ pub fn truncate (h []u8, digits int) !u32 {
 	}
 	return result
 }
+
+// --------------------------
+// -- URL Encoding Helpers -- 
+// --------------------------
 
 const reserved_chars = {
 	// RFC3986 Reserved
