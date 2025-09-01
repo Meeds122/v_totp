@@ -6,6 +6,7 @@ fn main() {
 	t := v_totp.new_totp('test_iss', 'test_acc')!
 	println(t.uri)
 	u := v_totp.parse_totp_uri(t.uri)!
-	r := u.valid_code(123456)
-	$dbg
+	mut bytes := [u8(145), 178, 231, 186, 107, 69, 174, 5, 71, 37, 172, 10, 253, 225, 104, 30, 1, 159, 74, 22]
+	r := v_totp.truncate(bytes, 6)!
+	println(r)
 }

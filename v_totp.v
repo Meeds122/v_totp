@@ -2,6 +2,7 @@ module v_totp
 
 import time
 import encoding.base32
+import encoding.binary
 import net.http { url_encode_form_data, parse_form } // https://modules.vlang.io/net.http.html#url_encode_form_data
 import strconv { atoi }
 
@@ -116,6 +117,27 @@ pub fn parse_totp_uri (uri string) !TOTP {
 pub fn (t TOTP) valid_code (code int) bool {
 
 	return true
+}
+
+// Supports all HMACs which create more than 20 bytes or 160 bits
+// Supports digits 6 - 8
+pub fn truncate (h []u8, digits int) !u32 {
+	if h.len < 20 {
+		return error('Error: Truncate, provided hash is less than 20 bytes.')
+	}
+	if (digits < 6) || (digits > 8) {
+		return error('Error: Truncate, digits not 6, 7, 8')
+	}
+	offset := h[h.len-1] & 0xf
+	subset := [
+		h[offset] & 0x7f,
+		h[offset+1],
+		h[offset+2],
+		h[offset+3]
+	]
+	compressed_subset := binary.big_endian_u32(subset)
+	result := compressed_subset % (10^u32(digits))
+	return result
 }
 
 const reserved_chars = {
