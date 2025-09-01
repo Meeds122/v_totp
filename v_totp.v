@@ -128,6 +128,11 @@ pub fn parse_totp_uri (uri string) !TOTP {
 // https://www.rfc-editor.org/rfc/rfc6238
 // https://www.rfc-editor.org/rfc/rfc4226
 
+pub fn hash (secret string, period int) []u8 {
+
+	return []u8{}
+}
+
 // Supports all HMACs which create more than 20 bytes or 160 bits
 // Supports digits 6 - 8
 // Called the DT function in RFC4226 and RFC6238
