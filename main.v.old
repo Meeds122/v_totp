@@ -4,5 +4,7 @@ import v_totp
 
 fn main() {
 	t := v_totp.new_totp('test_iss', 'test_acc')!
-	println(t)
+	println(t.uri)
+	u := v_totp.parse_totp_uri(t.uri)!
+	$dbg
 }
