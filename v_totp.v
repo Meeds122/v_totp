@@ -53,9 +53,16 @@ pub:
 // -- v_totp methods --
 // --------------------
 
-pub fn (t TOTP) valid_code (code int) bool {
-
-	return true
+// TODO, generating bad codes still. Probably need to figure out an HMAC buffer of the endianness
+pub fn (t TOTP) valid_code (code int) !bool {
+	mut h := []u8{}
+	match t.algorithm {
+		'SHA1' { h = sha1_hmac(t.secret, t.period, time.now().unix()) or { return err } }
+		else { return error('Error: Hash algorithm not implemented') }
+	}
+	generated_code := truncate(h, t.digits) or { return err }
+	$dbg
+	return i64(code) == i64(generated_code)
 }
 
 // Create the most basic TOTP using defaults.
@@ -128,9 +135,16 @@ pub fn parse_totp_uri (uri string) !TOTP {
 // https://www.rfc-editor.org/rfc/rfc6238
 // https://www.rfc-editor.org/rfc/rfc4226
 
-pub fn hash (secret string, period int) []u8 {
+pub fn sha1_hmac (k string, period int, epoch_time i64) ![]u8 {
 
-	return []u8{}
+	if epoch_time < 0 {
+		return error( 'Error: HMAC, epoch_time < 0')
+	}
+	// unsafe { *(&u32(a.data)) }
+	t := u64((epoch_time - 0) / period)
+	time_bytes := binary.big_endian_get_u64(t)
+	h := hmac.new(k.bytes(), time_bytes, sha1.sum, 160)
+	return h
 }
 
 // Supports all HMACs which create more than 20 bytes or 160 bits
