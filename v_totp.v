@@ -56,8 +56,9 @@ pub:
 // TODO, generating bad codes still. Probably need to figure out an HMAC buffer of the endianness
 pub fn (t TOTP) valid_code (code int) !bool {
 	mut h := []u8{}
+	secret := base32.decode(t.secret.bytes()) or  {return err }
 	match t.algorithm {
-		'SHA1' { h = sha1_hmac(t.secret, t.period, time.now().unix()) or { return err } }
+		'SHA1' { h = sha1_hmac(secret, t.period, time.now().unix()) or { return err } }
 		else { return error('Error: Hash algorithm not implemented') }
 	}
 	generated_code := truncate(h, t.digits) or { return err }
@@ -135,15 +136,26 @@ pub fn parse_totp_uri (uri string) !TOTP {
 // https://www.rfc-editor.org/rfc/rfc6238
 // https://www.rfc-editor.org/rfc/rfc4226
 
-pub fn sha1_hmac (k string, period int, epoch_time i64) ![]u8 {
+pub fn sha1_hmac (k []u8, period int, epoch_time i64) ![]u8 {
 
 	if epoch_time < 0 {
 		return error( 'Error: HMAC, epoch_time < 0')
 	}
+	println('- In sha1_hmac -')
+	print('K: ')
+	bhp(k)
+	println('period: ${period}')
+	println('epoch_time: ${epoch_time} 0x${epoch_time:x}')
 	// unsafe { *(&u32(a.data)) }
 	t := u64((epoch_time - 0) / period)
+	println('T: ${t} 0x${t:x}')
 	time_bytes := binary.big_endian_get_u64(t)
-	h := hmac.new(k.bytes(), time_bytes, sha1.sum, 160)
+	print('time_bytes: ')
+	bhp(time_bytes)
+	h := hmac.new(k, time_bytes, sha1.sum, 160)
+	print('HMAC: ')
+	bhp(h)
+	println('- Out of sha1_hmac')
 	return h
 }
 
@@ -157,15 +169,22 @@ pub fn truncate (h []u8, digits int) !u32 {
 	if (digits < 6) || (digits > 8) {
 		return error('Error: Truncate, digits not 6, 7, 8')
 	}
+	println('- In truncate')
+	print('HMAC: ')
+	bhp(h)
 	// Based on the RFC4226 algorithm. 
 	offset := h[h.len-1] & 0xf
+	println('Offset: ${offset} 0x${offset:x}')
 	subset := [
 		h[offset] & 0x7f,
 		h[offset+1],
 		h[offset+2],
 		h[offset+3]
 	]
+	print('Subset: ')
+	bhp(subset)
 	compressed_subset := binary.big_endian_u32(subset)
+	println('Compressed Subset: 0x${compressed_subset:x}')
 	// math.powi returns an i64. This is faster and simpler because digits is constrained.
 	mut result := u32(0)
 	match digits {
@@ -174,6 +193,8 @@ pub fn truncate (h []u8, digits int) !u32 {
 		8 { result = compressed_subset % 100_000_000 }
 		else { return error('Error: Truncate, digits not 6, 7, 8')}
 	}
+	println('Result: ${result} 0x${result:x}')
+	println('- Out of truncate')
 	return result
 }
 
@@ -257,4 +278,11 @@ pub fn url_decode (text string) string {
 	}
 
 	return return_text
+}
+
+fn bhp (bytes []u8) {
+	for byte in bytes {
+		print('0x${byte:x} ')
+	}
+	print('\n')
 }
